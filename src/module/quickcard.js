@@ -51,6 +51,8 @@ export class QuickCard {
                 }
             })
         }
+
+        this._setupEffectsButtons(html);
     }
 
     /**
@@ -92,6 +94,12 @@ export class QuickCard {
     _setupActionButtons(html) {
         html.find(".rsr-damage-buttons button").click(async evt => {
             await this._processDamageButtonEvent(evt);
+        });
+    }
+
+    _setupEffectsButtons(html) {
+        html.find(".rsr-effects-buttons button").click(async evt => {
+            await this._applyEffects(evt);
         });
     }
 
@@ -304,6 +312,23 @@ export class QuickCard {
 
 		return damage || crit;
 	}
+
+    /**
+     * Processes and handles a manual damage button click event.
+     * @param {Event} event The originating event of the button click.
+     * @private
+     */
+     async _applyEffects(event) {
+        if (this.roll.item.system.target.type == "self"){
+            DAE.doEffects(this.roll.item, true, [this.roll.item.parent]);
+            return;
+        }
+
+        window.DAE.doEffects(this.roll.item, true, game.user.targets, {
+            whisper: false,
+            itemCardId: this.id
+        });
+    }
 
     /**
      * Updates the contents of the quick card with the new setup of quick roll fields.

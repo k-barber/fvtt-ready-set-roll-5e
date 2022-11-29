@@ -36,7 +36,7 @@ export class ItemUtility {
     static async getFieldsFromItem(item, params) {
         ItemUtility.ensureFlagsOnitem(item);
         ItemUtility.ensureItemParams(item, params);
-        
+
         const manualDamage = SettingsUtility.getSettingValue(SETTING_NAMES.ALWAYS_MANUAL_DAMAGE);
         const chatData = await item.getChatData();
         let fields = [];
@@ -74,6 +74,10 @@ export class ItemUtility {
             await _addFieldDamage(fields, item, params);
         }
 
+        if (window.DAE) {
+            await _addFieldEffects(fields, item, params);
+        }
+
         if (ItemUtility.getFlagValueFromItem(item, "quickOther", params.isAltRoll)) {
             await _addFieldOtherFormula(fields, item);
         }
@@ -84,7 +88,7 @@ export class ItemUtility {
 
         return fields;
     }
-    
+
     /**
      * Generates a list of specific fields from this item roll, instead of generating all.
      * Will only generate fields if they are available and enabled via the roll configuraton flags.
@@ -110,7 +114,7 @@ export class ItemUtility {
 
         return fields;
     }
-    
+
     /**
      * Retrieves a roll configuration to pass to the default Foundry VTT item.use().
      * This configuration largely handles what the item will consume, as specified in the roll configuration tab.
@@ -124,7 +128,7 @@ export class ItemUtility {
 
         const config = {}
 
-        if (item?.hasAreaTarget && item?.flags[MODULE_SHORT].quickTemplate) { 
+        if (item?.hasAreaTarget && item?.flags[MODULE_SHORT].quickTemplate) {
             config.createMeasuredTemplate = item.flags[MODULE_SHORT].quickTemplate[isAltRoll ? "altValue" : "value"];
         }
         if (item?.hasQuantity && item?.flags[MODULE_SHORT].consumeQuantity) {
@@ -141,7 +145,7 @@ export class ItemUtility {
         }
 
         return config;
-    }   
+    }
 
     /**
      * Gets a specific value for a set module flag from an item.
@@ -154,7 +158,7 @@ export class ItemUtility {
         if (item?.flags[MODULE_SHORT][flag]) {
             return item.flags[MODULE_SHORT][flag][isAltRoll ? "altValue" : "value"] ?? false;
         }
-        
+
         return false;
     }
 
@@ -165,7 +169,7 @@ export class ItemUtility {
      * @returns 
      */
     static getDamageContextFromItem(item, index) {
-        if (item?.flags[MODULE_SHORT].quickDamage) {          
+        if (item?.flags[MODULE_SHORT].quickDamage) {
             return item.flags[MODULE_SHORT].quickDamage.context[index] ?? undefined;
         }
 
@@ -200,7 +204,7 @@ export class ItemUtility {
         params.isAltRoll = params?.isAltRoll ?? false;
         params.damageFlags = ItemUtility.getFlagValueFromItem(item, "quickDamage", params.isAltRoll);
         params.versatile = ItemUtility.getFlagValueFromItem(item, "quickVersatile", params.isAltRoll);
-        params.elvenAccuracy = (item.actor?.flags?.dnd5e?.elvenAccuracy && 
+        params.elvenAccuracy = (item.actor?.flags?.dnd5e?.elvenAccuracy &&
             CONFIG.DND5E.characterFlags.elvenAccuracy.abilities.includes(item.abilityMod)) || undefined
     }
 
@@ -256,8 +260,8 @@ export class ItemUtility {
             moduleFlags.quickDamage.altValue = newQuickDamageAltValues;
         }
 
-        item.flags[MODULE_SHORT] = moduleFlags;        
-        
+        item.flags[MODULE_SHORT] = moduleFlags;
+
         ItemUtility.ensureConsumePropertiesOnItem(item);
     }
 }
@@ -308,6 +312,16 @@ function _addFieldDescription(fields, chatData) {
                 content: chatData.description.value,
                 isFlavor: false
             }
+        ]);
+    }
+}
+
+function _addFieldEffects(fields, item) {
+    const hasEffects = item?.data.effects.find(ae => !ae.data.transfer);
+    if (hasEffects) {
+        fields.push([
+            FIELD_TYPE.EFFECT,
+            {}
         ]);
     }
 }
@@ -439,7 +453,7 @@ async function _addFieldDamage(fields, item, params) {
             roll.terms.shift();
 
             if (params?.damageFlags[i] ?? true) {
-                damageTermGroups.push({ type: part[1], terms: partTerms});
+                damageTermGroups.push({ type: part[1], terms: partTerms });
                 damageContextGroups.push(ItemUtility.getDamageContextFromItem(item, i));
             }
         });
@@ -452,7 +466,7 @@ async function _addFieldDamage(fields, item, params) {
 
         for (const [i, group] of damageTermGroups.entries()) {
             const baseRoll = Roll.fromTerms(group.terms);
-            
+
             let critRoll = null;
             if (params?.isCrit) {
                 critRoll = await RollUtility.getCritRoll(baseRoll, i, item.getRollData(), roll.options);
@@ -523,7 +537,7 @@ async function _addFieldAbilityCheck(fields, item, params) {
             LogUtility.logError(CoreUtility.localize(`${MODULE_SHORT}.messages.error.labelNotInDictionary`,
                 { type: "Ability", label: ability, dictionary: "CONFIG.DND5E.abilities" }));
             return;
-		}
+        }
 
         const roll = await item.actor.rollAbilityTest(item.hasAbilityCheck, {
             fastForward: true,
@@ -543,5 +557,5 @@ async function _addFieldAbilityCheck(fields, item, params) {
                 title: `Ability Check - ${CONFIG.DND5E.abilities[item.hasAbilityCheck]}`
             }
         ]);
-    }    
+    }
 }

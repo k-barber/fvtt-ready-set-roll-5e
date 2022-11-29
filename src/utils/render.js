@@ -19,6 +19,7 @@ export const FIELD_TYPE = {
     SAVE: 'save',
     MANUAL: "manual",
     BLANK: 'blank',
+    EFFECT: 'effect',
 }
 
 /**
@@ -54,6 +55,8 @@ export class RenderUtility {
                 return _renderAttackRoll(fieldData);
             case FIELD_TYPE.DAMAGE:
                 return _renderDamageRoll(fieldData);
+            case FIELD_TYPE.EFFECT:
+                return _renderEffectsButton(fieldData);
         }
     }
 
@@ -99,6 +102,10 @@ function _renderBlank(renderData = {}) {
         id,
         display
     });
+}
+
+function _renderEffectsButton(renderData = {}) {
+    return _renderModuleTemplate(TEMPLATE.EFFECTS_BUTTON, {});
 }
 
 function _renderHeader(renderData = {}) {
